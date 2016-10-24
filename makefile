@@ -4,7 +4,8 @@ all: rebuild
 
 rebuild:
 	mkdir -p src/obj
-	$(MAKE) -C src ../a.out
+	$(MAKE) -C src ../raw_test
+	tests/basic.sh
 
 .PHONY: all clean
 

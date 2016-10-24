@@ -12,10 +12,10 @@ CFLAGS=$(INCLUDES) -g -Wall -L/usr/local/lib -std=c++11
 _OBJ=main.o dicom_v1_dcmtk.o
 OBJ=$(patsubst %,$(ODIR)/%,$(_OBJ));
 
-all: ../a.out
+all: ../raw_test
 
-../a.out: $(OBJ)
-	(cd obj && $(CC) -g -o ../../a.out *.o $(LIBS))
+../raw_test: $(OBJ)
+	(cd obj && $(CC) -g -o ../../raw_test *.o $(LIBS))
 
 obj/main.o: main.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
