@@ -20,7 +20,7 @@ all: ../raw_test
 obj/main.o: main.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-obj/dicom_v1_dcmtk.o: dicom_v1_dcmtk.cpp
+obj/dicom_v1_dcmtk.o: dicom_v1_dcmtk.cpp dicom_scanner.hpp
 	$(CC) $(CFLAGS) -c -o $@ $< 
 
 .PHONY: all test clean

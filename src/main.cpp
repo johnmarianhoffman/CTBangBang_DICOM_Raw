@@ -46,8 +46,8 @@ int main(int argc, char ** argv){
 
     /* Individual file reading */
     // Test our metadata reading
-    dicom_v1_dcmtk_extract_metadata(argv[1]);
-    dicom_v1_dcmtk_build_ctbb_scanner(argv[1]);
+    //dicom_v1_dcmtk_extract_metadata(argv[1]);
+    dicom_v1_dcmtk_build_ctbb_scanner(argv[1]);        
     dicom_v1_dcmtk_ReadTubeAngle(argv[1]);
     dicom_v1_dcmtk_ReadTablePosition(argv[1]);
 

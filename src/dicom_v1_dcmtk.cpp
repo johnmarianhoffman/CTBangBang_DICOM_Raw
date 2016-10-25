@@ -9,6 +9,8 @@
 //
 // Copyright (c) John Hoffman, 2016
 
+#define __DEBUG__
+
 #include <iostream>
 
 #include "dcmtk/config/osconfig.h"
@@ -17,6 +19,8 @@
 #include "dcmtk/dcmdata/dcistrmf.h"
 
 #include "dicom_v1_dcmtk.h"
+
+#include "dicom_scanner.hpp"
 
 //    Nrows:	64
 //    CollSlicewidth:	0.6
@@ -59,6 +63,81 @@
 #define DCM_DetectorCentralElement DcmTagKey(0x7031,0x1033)
 #define DCM_DetectorFocalCenterAxialPositionArray DcmTagKey(0x7031,0x1002)
 #define DCM_DetectorFocalCenterAngularPositionArray DcmTagKey(0x7031,0x1001)
+
+int dicom_v1_dcmtk_build_ctbb_scanner(std::string filepath){
+    OFCondition status;
+    DcmFileFormat fileformat;
+    status = fileformat.loadFile(filepath.c_str(), EXS_Unknown, EGL_noChange, DCM_MaxReadLength);//, ERM_metaOnly
+    DcmDataset *dataset=fileformat.getDataset();
+
+    ctbb_scanner scanner;
+    
+    if (status.good())
+        {            
+            //RSrcToIso
+            float r_f;
+            if (dataset->findAndGetFloat32(DCM_DetectorFocalCenterRadialDistanceArray,r_f).good()){
+                scanner.set_r_f(r_f);
+            }
+            std::cout << scanner.get_r_f() << std::endl;
+
+            //RSrcToDet
+            float r_src_det;
+            if (dataset->findAndGetFloat32(DCM_ConstantRadialDistance,r_src_det).good()){
+                scanner.set_r_src_det(r_src_det);
+            }
+            std::cout << scanner.get_r_src_det() << std::endl;
+
+            // NProjTurn
+            Uint16 n_proj_turn;
+            if (dataset->findAndGetUint16(DCM_NumberofSourceAngularSteps,n_proj_turn).good()){
+                scanner.set_n_proj_turn((size_t)n_proj_turn);
+            }
+            std::cout << scanner.get_n_proj_turn() << std::endl;
+
+            // NChannels
+            Uint16 n_channels;
+            if (dataset->findAndGetUint16(DCM_NumberofDetectorColumns,n_channels).good()){
+                scanner.set_n_channels((size_t)n_channels);
+            }
+            std::cout << scanner.get_n_channels() << std::endl;            
+
+            // FanAngleInc:
+            float d_channel;
+            if (dataset->findAndGetFloat32(DCM_DetectorElementTransverseSpacing,d_channel).good()){
+                scanner.set_fan_angle_increment_from_spacing(d_channel);
+            }
+            std::cout << scanner.get_fan_angle_increment() << std::endl;
+            
+            // Not yet supported by CTBangBang
+            OFString hu_calibration_factor;
+            if (dataset->findAndGetOFString(DCM_HUCalibrationFactor,hu_calibration_factor).good()){
+                scanner.set_hu_calibration_factor(std::stof(hu_calibration_factor.c_str()));
+            }
+            std::cout << scanner.get_hu_calibration_factor() << std::endl;
+
+            // Central channel, row
+            const float * central_elem;
+            size_t n_elem;
+            if (dataset->findAndGetFloat32Array(DCM_DetectorCentralElement,central_elem,&n_elem,false).good()){
+                scanner.set_central_channel(central_elem[0]);
+                scanner.set_central_row(central_elem[1]);
+            }
+
+            // Theta cone
+            float d_row;
+            if (dataset->findAndGetFloat32(DCM_DetectorElementAxialSpacing,d_row).good()){
+                scanner.set_theta_cone_from_spacing(d_row);
+            }
+            std::cout << scanner.get_theta_cone() << std::endl;            
+        }
+
+    #ifdef __DEBUG__
+    scanner.save_to_file("/home/john/Desktop/test.scanner");
+    #endif
+    
+    return 0;
+}
 
 // function to extract metadata
 int dicom_v1_dcmtk_extract_metadata(std::string filepath){
@@ -106,57 +185,10 @@ int dicom_v1_dcmtk_extract_metadata(std::string filepath){
         OFString d_row;
 	if (fileformat.getDataset()->findAndGetOFString(DCM_DetectorElementTransverseSpacing, d_row).good())
             COUT << "d_row: " << d_row << OFendl;
-
         
-
         //fileformat.print(COUT);
     }
 
-    return 0;
-}
-
-int dicom_v1_dcmtk_build_ctbb_scanner(std::string filepath){
-    OFCondition status;
-    DcmFileFormat fileformat;
-    status = fileformat.loadFile(filepath.c_str(), EXS_Unknown, EGL_noChange, DCM_MaxReadLength);//, ERM_metaOnly
-
-    if (status.good())
-        {
-    
-            //RSrcToIso
-            OFString r_f;
-            if (fileformat.getDataset()->findAndGetOFString(DCM_DetectorFocalCenterRadialDistanceArray, r_f).good())
-                COUT << "r_f: " << r_f << OFendl;
-
-            //RSrcToDet
-            OFString r_src_det;
-            if (fileformat.getDataset()->findAndGetOFString(DCM_ConstantRadialDistance, r_src_det).good())
-                COUT << "r_src_det: " << r_src_det << OFendl;
-
-            // NProjTurn
-            OFString n_proj_turn;
-            if (fileformat.getDataset()->findAndGetOFString(DCM_NumberofSourceAngularSteps, n_proj_turn).good())
-                COUT << "N_Proj_Turn: " << n_proj_turn << OFendl;
-
-            // NChannels
-            OFString n_channels;
-            if (fileformat.getDataset()->findAndGetOFString(DCM_NumberofDetectorColumns, n_channels).good())
-                COUT << "n_channels: " << n_channels << OFendl;
-
-            // FanAngleInc:
-            OFString d_channel;
-            if (fileformat.getDataset()->findAndGetOFString(DCM_DetectorElementAxialSpacing, d_channel).good())
-                COUT << "d_channel: " << d_channel << OFendl;
-
-            // Not yet supported by CTBangBang
-            OFString hu_calibration_factor;
-            if (fileformat.getDataset()->findAndGetOFString(DCM_HUCalibrationFactor, hu_calibration_factor).good())
-                COUT << "hu_calibration_factor: " << hu_calibration_factor << OFendl;
-
-
-        }
-
-    
     return 0;
 }
 
@@ -193,10 +225,7 @@ void dicom_v1_dcmtk_ReadFrame(std::string filepath,float * frame){
                     std::cout << "Rescale intercept: " << r_intercept << std::endl;
 
                     for (int i=0;i<n_channels*n_rows;i++){
-                        //
                         frame[i]=r_slope*(float)frame_uint16[i]+r_intercept;
-                        //frame[i]=frame_uint16[i];
-                        std::cout << frame[0] << std:: endl;
                     }
                 }
             }
