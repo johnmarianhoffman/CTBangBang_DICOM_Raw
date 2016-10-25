@@ -1,3 +1,4 @@
 a.out
 src/obj/
 raw_test
+tests/test_data/mayo_dicom_raw/

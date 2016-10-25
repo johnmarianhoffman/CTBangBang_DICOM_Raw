@@ -29,8 +29,9 @@ void usage(){
     exit(0);
 }
 
-
 #include <fstream>
+
+#include "dicom_raw_series.hpp"
 
 using namespace std;
 inline void float_debug(float * array,size_t numel, string file){
@@ -46,18 +47,23 @@ int main(int argc, char ** argv){
 
     /* Individual file reading */
     // Test our metadata reading
-    //dicom_v1_dcmtk_extract_metadata(argv[1]);
-    dicom_v1_dcmtk_build_ctbb_scanner(argv[1]);        
-    dicom_v1_dcmtk_ReadTubeAngle(argv[1]);
-    dicom_v1_dcmtk_ReadTablePosition(argv[1]);
+    //dicom_v1_dcmtk_extract_series_metadata(argv[1]);
+    //dicom_v1_dcmtk_build_ctbb_scanner(argv[1]);        
+    //dicom_v1_dcmtk_ReadTubeAngle(argv[1]);
+    //dicom_v1_dcmtk_ReadTablePosition(argv[1]);
 
     // Attempt to read frame data
-    float * frame= new float[736*32];
-    dicom_v1_dcmtk_ReadFrame(argv[1],frame);
-    float_debug(frame,736*32,std::string("/home/john/Desktop/test_frame.bin"));
+    //float * frame= new float[736*32];
+    //dicom_v1_dcmtk_ReadFrame(argv[1],frame);
+    //float_debug(frame,736*32,std::string("/home/john/Desktop/test_frame.bin"));
 
-    std::cout << std::endl << std::endl << std::endl << frame[0] << std::endl;
+    /* Full Series reading */
+    // Attempt to read a folder as a series
+    raw_series s("/home/john/Code/CTBangBang_DICOM_Raw/tests/test_data/mayo_dicom_raw/");
+    s.list_files();
+    s.load_series_metadata();
+    s.print_series_metadata();
     
-    delete[] frame;
+    //delete[] frame;
     return 0;
 }

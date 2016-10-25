@@ -12,7 +12,8 @@
 #include <string>
 
 // function to extract metadata
-int dicom_v1_dcmtk_extract_metadata(std::string filepath);
+int dicom_v1_dcmtk_extract_series_metadata(std::string filepath);
+int dicom_v1_dcmtk_extract_frame_metadata(std::string filepath);
 int dicom_v1_dcmtk_build_ctbb_scanner(std::string filepath);
 float dicom_v1_dcmtk_ReadTubeAngle(std::string filepath);
 float dicom_v1_dcmtk_ReadTablePosition(std::string filepath);

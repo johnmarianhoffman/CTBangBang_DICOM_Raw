@@ -17,7 +17,7 @@ all: ../raw_test
 ../raw_test: $(OBJ)
 	(cd obj && $(CC) -g -o ../../raw_test *.o $(LIBS))
 
-obj/main.o: main.cpp
+obj/main.o: main.cpp dicom_raw_series.hpp
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 obj/dicom_v1_dcmtk.o: dicom_v1_dcmtk.cpp dicom_scanner.hpp

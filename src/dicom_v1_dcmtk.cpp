@@ -50,21 +50,11 @@
 //    AdaptiveFiltration:	1.0
 
 
-#define DCM_HUCalibrationFactor DcmTagKey(0x0018,0x0061)
-
-#define DCM_NumberofSourceAngularSteps DcmTagKey(0x7033,0x1013)
-#define DCM_FlyingFocalSpotMode DcmTagKey(0x7033,0x100E)
-#define DCM_NumberofDetectorRows DcmTagKey(0x7029,0x1010)
-#define DCM_NumberofDetectorColumns DcmTagKey(0x7029,0x1011)
-#define DCM_DetectorElementTransverseSpacing DcmTagKey(0x7029,0x1002)
-#define DCM_DetectorElementAxialSpacing DcmTagKey(0x7029,0x1006)
-#define DCM_DetectorFocalCenterRadialDistanceArray DcmTagKey(0x7031,0x1003)
-#define DCM_ConstantRadialDistance DcmTagKey(0x7031,0x1031)
-#define DCM_DetectorCentralElement DcmTagKey(0x7031,0x1033)
-#define DCM_DetectorFocalCenterAxialPositionArray DcmTagKey(0x7031,0x1002)
-#define DCM_DetectorFocalCenterAngularPositionArray DcmTagKey(0x7031,0x1001)
+#include "dcdeftag_dicom_raw.h"
 
 int dicom_v1_dcmtk_build_ctbb_scanner(std::string filepath){
+    std::cout << "BUILIDING SCANNER FILE FROM " << filepath << std::endl;
+    
     OFCondition status;
     DcmFileFormat fileformat;
     status = fileformat.loadFile(filepath.c_str(), EXS_Unknown, EGL_noChange, DCM_MaxReadLength);//, ERM_metaOnly
@@ -135,58 +125,77 @@ int dicom_v1_dcmtk_build_ctbb_scanner(std::string filepath){
     #ifdef __DEBUG__
     scanner.save_to_file("/home/john/Desktop/test.scanner");
     #endif
+
+    std::cout << "DONE" << std::endl;
     
     return 0;
 }
 
-// function to extract metadata
-int dicom_v1_dcmtk_extract_metadata(std::string filepath){
+int dicom_v1_dcmtk_extract_series_metadata(std::string filepath){
+
+    std::cout << "EXTRACTING SERIES METADATA FROM " << filepath << std::endl;
 
     OFCondition status;
     DcmFileFormat fileformat;
     status = fileformat.loadFile(filepath.c_str(), EXS_Unknown, EGL_noChange, DCM_MaxReadLength);//, ERM_metaOnly
 
-    if (status.good())
-    {
-        OFString sopClassUID, xferUID, TubeAngle;
-        if (fileformat.getMetaInfo()->findAndGetOFString(DCM_MediaStorageSOPClassUID, sopClassUID).good())
-	    COUT << "SOP Class UID: " << sopClassUID << OFendl;
-        if (fileformat.getMetaInfo()->findAndGetOFString(DCM_TransferSyntaxUID, xferUID).good())
-            COUT << "Transfer Syntax UID: " << xferUID << OFendl;
+    DcmDataset *dataset=fileformat.getDataset();
 
-        OFString spf;
-	if (fileformat.getDataset()->findAndGetOFString(DCM_SpiralPitchFactor,spf).good())
-            COUT << "Spiral pitch factor: " << spf << OFendl;
+    if (status.good()){
+        double spiral_pitch_factor;
+        if (dataset->findAndGetFloat64(DCM_SpiralPitchFactor,spiral_pitch_factor).good()){
+        }
+        std::cout << "Spiral pitch factor: " << spiral_pitch_factor << std::endl;
+
+        double table_feed;
+        if (dataset->findAndGetFloat64(DCM_TableFeedPerRotation,table_feed).good()){
+        }
+        std::cout << "table_feed: " << table_feed << std::endl;
+
+        OFString data_collection_diameter; //Acquisition FOV
+        if (dataset->findAndGetOFString(DCM_DataCollectionDiameter,data_collection_diameter).good()){            
+        }
+        std::cout << "data_collection_diameter: " << data_collection_diameter << std::endl;
         
-        OFString table_feed;
-	if (fileformat.getDataset()->findAndGetOFString(DCM_TableFeedPerRotation, table_feed).good())
-            COUT << "table_feed: " << table_feed << OFendl;
-
-        OFString image_orientation_patient;
-	if (fileformat.getDataset()->findAndGetOFString(DCM_ImageOrientationPatient, image_orientation_patient).good())
-            COUT << "Image_Orientation_Patient: " << image_orientation_patient << OFendl;
-
-        OFString acq_fov;
-	if (fileformat.getDataset()->findAndGetOFString(DCM_DataCollectionDiameter, acq_fov).good())
-            COUT << "acq_fov: " << acq_fov << OFendl;
-
-        OFString ffs_mode;
-	if (fileformat.getDataset()->findAndGetOFString(DCM_FlyingFocalSpotMode, ffs_mode).good())
-            COUT << "ffs_mode: " << ffs_mode << OFendl;
-
-        OFString n_rows;
-	if (fileformat.getDataset()->findAndGetOFString(DCM_NumberofDetectorRows, n_rows).good())
-            COUT << "n_rows: " << n_rows << OFendl;
-
-        OFString table_pos;
-	if (fileformat.getDataset()->findAndGetOFString(DCM_TablePosition, n_rows).good())
-            COUT << "n_rows: " << n_rows << OFendl;
-
-        OFString d_row;
-	if (fileformat.getDataset()->findAndGetOFString(DCM_DetectorElementTransverseSpacing, d_row).good())
-            COUT << "d_row: " << d_row << OFendl;
+        OFString ffs_mode; // value represenation is a "code string"
+        if (dataset->findAndGetOFString(DCM_FlyingFocalSpotMode,ffs_mode).good()){
+        }
+        std::cout << "ffs_mode:" << ffs_mode  << std::endl;
         
-        //fileformat.print(COUT);
+        Uint16 n_rows;
+        if (dataset->findAndGetUint16(DCM_NumberofDetectorRows,n_rows).good()){
+        }
+        std::cout << "n_rows:" << n_rows  << std::endl;
+        
+    }
+
+    std::cout << "DONE" << std::endl;
+    
+    return 0;
+}
+
+// function to extract metadata
+int dicom_v1_dcmtk_extract_frame_metadata(std::string filepath){
+
+    // Extract the following from the file:
+    // 
+    // Instance number (Frame index)
+    // Series ID (To make sure we're not mixing datasets)
+    // Tube angle (Needed for reconstruction)
+    // Table position (needed for subselecting regions)
+    // Tube current (because why not)
+
+    OFCondition status;
+    DcmFileFormat fileformat;
+    status = fileformat.loadFile(filepath.c_str(), EXS_Unknown, EGL_noChange, DCM_MaxReadLength);//, ERM_metaOnly
+
+    DcmDataset *dataset=fileformat.getDataset();
+
+    if (status.good()){
+        OFString instance_number;
+        if (dataset->findAndGetOFString(DCM_InstanceNumber,instance_number).good()){
+            
+        }
     }
 
     return 0;
