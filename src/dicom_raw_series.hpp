@@ -24,8 +24,9 @@ private:
     int z_ffs_;
     int phi_ffs_;
     size_t n_rows_;
+    size_t n_channels_;
 
-    dicom_frame * frame_array_;
+    dicom_frame * frame_array_=NULL;
     
 public:
 
@@ -51,16 +52,52 @@ public:
         if (frame_array_)
             delete[] frame_array_;
     }
+
+    size_t get_instance_number(size_t frame_idx) {return frame_array_[frame_idx].get_instance_number();};
+    size_t get_instance_number(double table_position);
+    double get_tube_angle(size_t frame_idx){ return frame_array_[frame_idx].get_tube_angle();};
+    double get_table_position(size_t frame_idx){ return frame_array_[frame_idx].get_table_position();};
+    float get_tube_current(size_t frame_idx){return frame_array_[frame_idx].get_tube_current();};
+    size_t get_number_of_projections(){return file_list_.size();};
+    size_t get_n_channels(){return n_channels_;};
+    size_t get_n_rows(){return n_rows_;};
+
     
     void add_file(std::string filepath);
+    void remove_file(std::string filepath);
+
     void list_files();
     void print_series_metadata();
     void load_series_metadata();
     void load_frame_metadata();
+
+    void load_frame(size_t frame_idx,float * frame, size_t * n_channels, size_t * n_rows);
 };
 
 void raw_series::add_file(std::string filepath){
     file_list_.push_back(directory_+ "/" + filepath);
+}
+
+size_t raw_series::get_instance_number(double table_position){
+    //Actually returns the index
+    // Returns -1 if idx lies outside of series range, HOWEVER
+    // to check this, return value must be cast to a signed long
+
+    size_t n_proj=file_list_.size();
+    double start= frame_array_[0].get_table_position();
+    double stop = frame_array_[n_proj-1].get_table_position();
+    
+    double m = (stop-start)/n_proj;
+    double b = start;
+
+    size_t requested_idx=(size_t)((table_position-b)/m);
+
+    std::cout << requested_idx << std::endl;
+
+    if ((requested_idx < 0) || (requested_idx >= n_proj))
+        requested_idx=-1;
+    
+    return requested_idx;
 }
 
 void raw_series::list_files(){
@@ -124,8 +161,7 @@ void raw_series::load_series_metadata(){
             else if (ffs_mode=="FFSDIAG"){                
             }
             else{
-            }
-                
+            }                
         }
         //std::cout << "ffs_mode:" << ffs_mode  << std::endl;
         
@@ -133,7 +169,13 @@ void raw_series::load_series_metadata(){
         if (dataset->findAndGetUint16(DCM_NumberofDetectorRows,n_rows).good()){
             n_rows_=(size_t)n_rows;
         }
-        //std::cout << "n_rows:" << n_rows  << std::endl;        
+        //std::cout << "n_rows:" << n_rows  << std::endl;
+
+        uint16_t n_channels;
+        if (dataset->findAndGetUint16(DCM_NumberofDetectorColumns, n_channels).good()){
+            n_channels_=(size_t)n_channels;
+        }
+
     }
 
     std::cout << "DONE" << std::endl;
@@ -144,6 +186,16 @@ void raw_series::load_frame_metadata(){
 
     for (unsigned int i=0;i<file_list_.size();i++){
         dicom_frame tmp_frame(file_list_[i],false);
-        frame_array_[tmp_frame.get_instance_number()]=tmp_frame;
+        //std::cout << "frame copied: " << tmp_frame.get_instance_number()-1 <<"/" << file_list_.size()<<   std::endl;
+        frame_array_[tmp_frame.get_instance_number()-1]=tmp_frame;
     }
+}
+
+void raw_series::load_frame(size_t frame_idx,float * frame, size_t * n_channels, size_t * n_rows){
+    // this function signature is designed to match other reader
+    // functions used in CTBangBang despite perhaps not being the most
+    // logical way to implement this
+    frame_array_[frame_idx].load_frame_data(frame);
+    *n_channels=frame_array_[frame_idx].get_n_channels();
+    *n_rows=frame_array_[frame_idx].get_n_rows();
 }
