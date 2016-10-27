@@ -21,6 +21,7 @@ obj/main.o: main.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 obj/dicom_v1_dcmtk.o: dicom_v1_dcmtk.cpp
+	python dcm_def_generator.py
 	$(CC) $(CFLAGS) -c -o $@ $< 
 
 .PHONY: all test clean

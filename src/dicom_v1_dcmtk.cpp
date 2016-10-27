@@ -16,6 +16,7 @@
 #include "dcmtk/dcmdata/dctk.h" 
 #include "dcmtk/dcmdata/dcistrmf.h"
 
+#include "dcdeftag_open_raw.h"
 #include "dicom_v1_dcmtk.h"
 
 // function to extract metadata
@@ -23,24 +24,27 @@ int dicom_v1_dcmtk_extract_metadata(std::string filepath){
 
     OFCondition status;
     DcmFileFormat fileformat;
-    status = fileformat.loadFile(filepath.c_str(), EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_metaOnly);
+
+    std::cout << filepath.c_str() << std::endl;
+    status = fileformat.loadFile(filepath.c_str());//, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_metaOnly
 
     if (status.good())
     {
-        OFString sopClassUID, xferUID, TubeAngle;
+	std::cout << "DCMTK IS A PIECE OF FUCKING SHIT LIBRARY" << std::endl;
+
+	std::cout << fileformat.getMetaInfo()->tagExists(DcmTagKey(0x0020,0x000D)) << OFendl;
+	
+        OFString sopClassUID, xferUID;
+	COUT << fileformat.getMetaInfo()->tagExists(DCM_MediaStorageSOPClassUID) << OFendl;
         if (fileformat.getMetaInfo()->findAndGetOFString(DCM_MediaStorageSOPClassUID, sopClassUID).good())
 	    COUT << "SOP Class UID: " << sopClassUID << OFendl;
         if (fileformat.getMetaInfo()->findAndGetOFString(DCM_TransferSyntaxUID, xferUID).good())
             COUT << "Transfer Syntax UID: " << xferUID << OFendl;
-
-	if (fileformat.getMetaInfo()->findAndGetOFString(DCM_TubeAngle, TubeAngle).good())
-            COUT << "Tube Angle: " << TubeAngle << OFendl;
-
-	if (fileformat.getMetaInfo()->findAndGetOFString(DCM_TableFeedPerRotation, TubeAngle).good())
-            COUT << "Tube Angle: " << TubeAngle << OFendl;
-
 	
-        //fileformat.print(COUT);
+	OFString AcqFOV;
+	COUT << DCM_DataCollectionDiameter << OFendl;
+	if (fileformat.getMetaInfo()->findAndGetOFString(DCM_DataCollectionDiameter, AcqFOV).good())
+	    COUT << "AcqFOV: " << AcqFOV << OFendl;
     }
 
     return 0;
