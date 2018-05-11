@@ -5,9 +5,10 @@ ODIR=obj
 IDIR_RECON=../include/
 INCLUDES=-I$(IDIR_RECON)
 
-LIBS=-lm -ldcmdata -loflog -lofstd -lpthread -lz
+LIBS=-lm -ldcmdata -loflog -lofstd -lpthread  -lz -licui18n -licuuc 
 
-CFLAGS=$(INCLUDES) -g -Wall -L/usr/local/lib -std=c++11
+#CFLAGS=$(INCLUDES) -g -Wall -L/usr/local/lib -std=c++11 
+CFLAGS=$(INCLUDES) -g -Wall -L/usr/local/lib -std=c++11 
 
 _OBJ=main.o dicom_v1_dcmtk.o
 OBJ=$(patsubst %,$(ODIR)/%,$(_OBJ));
